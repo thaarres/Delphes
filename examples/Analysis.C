@@ -33,6 +33,8 @@ struct MyPlots
   TH1 *hLightJetIP_second;
   TH1 *hLightJetIP_third;
   
+  TH2 *h_IPversusTrackPt;
+  
   
 };
 
@@ -56,49 +58,46 @@ double ComputeIP(Track *LeadingTrack) {
   Double_t dxy;
   TVector3 vLeadingTrack;
   vLeadingTrack.SetPtEtaPhi(LeadingTrack->PT, LeadingTrack->Eta, LeadingTrack->Phi);
-  // 
-//   Int_t Bz = 3.8; //magnetic field
-//   const Double_t c_light = 2.99792458E8; //c
-//   
-//   
-//   Double_t r;
-//   Double_t x_c, y_c, r_c, phi_c, phi_0, phi;
-//   Double_t rcu, rc2, dxy, xd, yd;
-//   Double_t pT = (LeadingTrack->PT);
-//   Double_t X = LeadingTrack->X * 1.0E-3; //position in meters
-//   Double_t Y = LeadingTrack->Y * 1.0E-3; //position in meters
-//   Double_t Z = LeadingTrack->Z * 1.0E-3; //position in meters
-//   
-//   
-//   
-//   
-//   
-//   
-//   r = pT / (LeadingTrack->Charge * Bz) * 1.0E9/c_light; // helix radius in [m]
-//   phi_0 = TMath::ATan2(vLeadingTrack.Py(), vLeadingTrack.Px()); // [rad] in [-pi, pi]
-//   
-//   // 2. helix axis coordinates
-//   x_c = X + r*TMath::Sin(phi_0);
-//   y_c = Y - r*TMath::Cos(phi_0);
-//   r_c = TMath::Hypot(x_c, y_c);
-//   phi_c = TMath::ATan2(y_c, x_c);
-//   phi = phi_c;
-//   if(x_c < 0.0) phi += TMath::Pi();
-//   
-//   rcu = TMath::Abs(r);
-//   rc2 = r_c*r_c;
-//   
-//   // calculate coordinates of closest approach to track circle in transverse plane xd, yd, zd
-//   xd = x_c*x_c*x_c - x_c*rcu*r_c + x_c*y_c*y_c;
-//   xd = (rc2 > 0.0) ? xd / rc2 : -999;
-//   yd = y_c*(-rcu*r_c + rc2);
-//   yd = (rc2 > 0.0) ? yd / rc2 : -999;
-//   //     zd = z + (TMath::Sqrt(xd*xd + yd*yd) - TMath::Sqrt(x*x + y*y))*pz/pt;
-//   
-//   // calculate impact paramater
-// //  dxy = (xd*vLeadingTrack.Py() - yd*vLeadingTrack.Px())/LeadingTrack->PT;
+
+   Int_t Bz = 3.8; //magnetic field
+   const Double_t c_light = 2.99792458E8; //c
+   
+   
+   Double_t r;
+   Double_t x_c, y_c, r_c, phi_c, phi_0, phi;
+   Double_t rcu, rc2, xd, yd;
+   Double_t pT = (LeadingTrack->PT);
+   Double_t X = LeadingTrack->X * 1.0E-3; //position in meters
+   Double_t Y = LeadingTrack->Y * 1.0E-3; //position in meters
+   Double_t Z = LeadingTrack->Z * 1.0E-3; //position in meters
+   
+   r = pT / (LeadingTrack->Charge * Bz) * 1.0E9/c_light; // helix radius in [m]
+   phi_0 = TMath::ATan2(vLeadingTrack.Py(), vLeadingTrack.Px()); // [rad] in [-pi, pi]
   
-  dxy = (- LeadingTrack->X *vLeadingTrack.Py() + LeadingTrack->Y  *vLeadingTrack.Px())/LeadingTrack->PT;
+   // 2. helix axis coordinates
+   x_c = X + r*TMath::Sin(phi_0);
+   y_c = Y - r*TMath::Cos(phi_0);
+   r_c = TMath::Hypot(x_c, y_c);
+   phi_c = TMath::ATan2(y_c, x_c);
+   phi = phi_c;
+   if(x_c < 0.0) phi += TMath::Pi();
+   
+   rcu = TMath::Abs(r);
+   rc2 = r_c*r_c;
+   
+   // calculate coordinates of closest approach to track circle in transverse plane xd, yd, zd
+   xd = x_c*x_c*x_c - x_c*rcu*r_c + x_c*y_c*y_c;
+   xd = (rc2 > 0.0) ? xd / rc2 : -999;
+   yd = y_c*(-rcu*r_c + rc2);
+   yd = (rc2 > 0.0) ? yd / rc2 : -999;
+//   //     zd = z + (TMath::Sqrt(xd*xd + yd*yd) - TMath::Sqrt(x*x + y*y))*pz/pt;
+  
+  // calculate impact paramater
+  dxy = (xd*vLeadingTrack.Py() - yd*vLeadingTrack.Px())/LeadingTrack->PT;
+  dxy = dxy * 1.0E2; //return value in cm
+  
+//  dxy = (- LeadingTrack->X *vLeadingTrack.Py() + LeadingTrack->Y  *vLeadingTrack.Px())/LeadingTrack->PT;
+  
   return dxy;
 }
 

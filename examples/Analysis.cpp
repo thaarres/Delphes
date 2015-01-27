@@ -24,8 +24,18 @@
 #include "ExRootAnalysis/ExRootResult.h"
 #include "ExRootAnalysis/ExRootUtilities.h"
 
+#include <iostream>
+#include <utility>
+#include <vector>
+#include <map>
+
+
+#include "TFile.h"
+#include "TCanvas.h"
+#include "TH1D.h"
+
 using namespace std;
- 
+
 //------------------------------------------------------------------------------
 
 // Analysis macro
@@ -58,7 +68,7 @@ int main(int argc, char *argv[])
 
 // Call the macros main function (in Analysis.C)
 
-  Analysis(inputFile,outputFile);
+  Analysis(inputFile, outputFile);
 
 //------------------------------------------------------------------------------
 

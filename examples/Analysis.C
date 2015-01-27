@@ -15,12 +15,14 @@ struct MyPlots
   TH1 *hParticleEta;
   TH1 *hBQuarkEta;
   
-  TH1 *hBJetIP;
-  TH1 *hLightJetIP; 
-  TH1 *hCJetIP;  
+  TH1 *hBJetIP_LeadingTrack;
+  TH1 *hLightJetIP_LeadingTrack; 
+  TH1 *hCJetIP_LeadingTrack;  
+  
   TH1 *h_bJetTrackPt;
   TH1 *h_bJetLeadingTrackPt;
   TH1 *h_bJetTrackMultiplicity;
+  
   TH1 *hBJetIP_first;
   TH1 *hBJetIP_second;
   TH1 *hBJetIP_third;
@@ -53,50 +55,49 @@ double DeltaR(TVector3 candidate1, TVector3 candidate2)
 //------------------------------------------------------------------------------
 
 //Function to compute the impact parameter
-double ComputeIP(Track *LeadingTrack) {
+double ComputeIP(Track *track) {
   
   Double_t dxy;
-  TVector3 vLeadingTrack;
-  vLeadingTrack.SetPtEtaPhi(LeadingTrack->PT, LeadingTrack->Eta, LeadingTrack->Phi);
+  TVector3 vtrack;
+  vtrack.SetPtEtaPhi(track->PT, track->Eta, track->Phi);
 
-   Int_t Bz = 3.8; //magnetic field
-   const Double_t c_light = 2.99792458E8; //c
-   
-   
-   Double_t r;
-   Double_t x_c, y_c, r_c, phi_c, phi_0, phi;
-   Double_t rcu, rc2, xd, yd;
-   Double_t pT = (LeadingTrack->PT);
-   Double_t X = LeadingTrack->X * 1.0E-3; //position in meters
-   Double_t Y = LeadingTrack->Y * 1.0E-3; //position in meters
-   Double_t Z = LeadingTrack->Z * 1.0E-3; //position in meters
-   
-   r = pT / (LeadingTrack->Charge * Bz) * 1.0E9/c_light; // helix radius in [m]
-   phi_0 = TMath::ATan2(vLeadingTrack.Py(), vLeadingTrack.Px()); // [rad] in [-pi, pi]
-  
-   // 2. helix axis coordinates
-   x_c = X + r*TMath::Sin(phi_0);
-   y_c = Y - r*TMath::Cos(phi_0);
-   r_c = TMath::Hypot(x_c, y_c);
-   phi_c = TMath::ATan2(y_c, x_c);
-   phi = phi_c;
-   if(x_c < 0.0) phi += TMath::Pi();
-   
-   rcu = TMath::Abs(r);
-   rc2 = r_c*r_c;
-   
-   // calculate coordinates of closest approach to track circle in transverse plane xd, yd, zd
-   xd = x_c*x_c*x_c - x_c*rcu*r_c + x_c*y_c*y_c;
-   xd = (rc2 > 0.0) ? xd / rc2 : -999;
-   yd = y_c*(-rcu*r_c + rc2);
-   yd = (rc2 > 0.0) ? yd / rc2 : -999;
+//    Double_t Bz = 3.8; //magnetic field
+//    const Double_t c_light = 2.99792458E8; //c
+//    
+//    
+//    Double_t r;
+//    Double_t x_c, y_c, r_c, phi_c, phi_0, phi;
+//    Double_t rcu, rc2, xd, yd;
+//    Double_t X = track->X * 1.0E-3; //position in meters
+//    Double_t Y = track->Y * 1.0E-3; //position in meters
+// //   Double_t Z = track->Z * 1.0E-3; //position in meters
+//    
+//    r = vtrack.Pt() / (track->Charge * Bz) * 1.0E9/c_light; // helix radius in [m]
+//    phi_0 = TMath::ATan2(vtrack.Py(), vtrack.Px()); // [rad] in [-pi, pi]
+//   
+//    // 2. helix axis coordinates
+//    x_c = X + r*TMath::Sin(phi_0);
+//    y_c = Y - r*TMath::Cos(phi_0);
+//    r_c = TMath::Hypot(x_c, y_c);
+//    phi_c = TMath::ATan2(y_c, x_c);
+//    phi = phi_c;
+//    if(x_c < 0.0) phi += TMath::Pi();
+//    
+//    rcu = TMath::Abs(r);
+//    rc2 = r_c*r_c;
+//    
+//    // calculate coordinates of closest approach to track circle in transverse plane xd, yd, zd
+//    xd = x_c*x_c*x_c - x_c*rcu*r_c + x_c*y_c*y_c;
+//    xd = (rc2 > 0.0) ? xd / rc2 : -999;
+//    yd = y_c*(-rcu*r_c + rc2);
+//    yd = (rc2 > 0.0) ? yd / rc2 : -999;
 //   //     zd = z + (TMath::Sqrt(xd*xd + yd*yd) - TMath::Sqrt(x*x + y*y))*pz/pt;
   
   // calculate impact paramater
-  dxy = (xd*vLeadingTrack.Py() - yd*vLeadingTrack.Px())/LeadingTrack->PT;
-  dxy = dxy * 1.0E2; //return value in cm
+  //dxy = (xd*vtrack.Py() - yd*vtrack.Px())/vtrack.Pt();
+  //dxy = dxy * 1.0E2; //return value in cm
   
-//  dxy = (- LeadingTrack->X *vLeadingTrack.Py() + LeadingTrack->Y  *vLeadingTrack.Px())/LeadingTrack->PT;
+  dxy = (- track->X *vtrack.Py() + track->Y  *vtrack.Px())/track->PT;
   
   return dxy;
 }
@@ -167,19 +168,19 @@ void BookHistograms(ExRootResult *result, MyPlots *plots)
     "Particle eta","number of jets",
     100, -2.5, 2.5);
   
-  plots->hBJetIP = result->AddHist1D(
-    "hBJetIP", "b-jet track IP",
+  plots->hBJetIP_LeadingTrack = result->AddHist1D(
+    "hBJetIP_LeadingTrack", "b-jet track IP",
     "b-jet track IP","number of tracks",
-    400, -0.2, 0.2);
+    400, -0.5, 0.5);
   
-  plots->hCJetIP = result->AddHist1D(
-    "hCJetIP", "c-jet track IP",
+  plots->hCJetIP_LeadingTrack = result->AddHist1D(
+    "hCJetIP_LeadingTrack", "c-jet track IP",
     "c-jet track IP","number of tracks",
-  400, -0.2, 0.2);  
-  plots->hLightJetIP = result->AddHist1D(
-    "hLightJetIP", "Light jet track IP",
+    400, -0.5, 0.5);
+  plots->hLightJetIP_LeadingTrack = result->AddHist1D(
+    "hLightJetIP_LeadingTrack", "Light jet track IP",
     "Light jet track IP","number of tracks",
-  400, -0.2, 0.2);    
+   400, -0.5, 0.5); 
 
 plots->h_bJetTrackPt = result->AddHist1D(
     "h_bJetTrackPt", "b-jet track p_{T}",
@@ -199,58 +200,65 @@ plots->h_bJetTrackPt = result->AddHist1D(
         plots->hLightJetIP_first = result->AddHist1D(
     "hLightJetIP_first", "Light-jet first track IP",
     "track IP","number of tracks",
-      400, -0.2, 0.2);
+       400, -0.5, 0.5);
       
           plots->hLightJetIP_second = result->AddHist1D(
     "hLightJetIP_second", "Light-jet second track IP",
     "track IP","number of tracks",
-      400, -0.2, 0.2);
+       400, -0.5, 0.5);
   
     plots->hLightJetIP_third = result->AddHist1D(
     "hLightJetIP_third", "Light-jet third track IP",
     "track IP","number of tracks",
-     400, -0.2, 0.2);
+     400, -0.5, 0.5);
       
           plots->hCJetIP_first = result->AddHist1D(
     "hCJetIP_first", "c-jet first track IP",
     "track IP","number of tracks",
-      400, -0.2, 0.2);
+        400, -0.5, 0.5);
       
           plots->hCJetIP_second = result->AddHist1D(
     "hCJetIP_second", "c-jet second track IP",
     "track IP","number of tracks",
-      400, -0.2, 0.2);
+        400, -0.5, 0.5);
   
     plots->hCJetIP_third = result->AddHist1D(
     "hCJetIP_third", "c-jet third track IP",
     "track IP","number of tracks",
-     400, -0.2, 0.2);
+      400, -0.5, 0.5);
       
     plots->hBJetIP_first = result->AddHist1D(
     "hBJetIP_first", "b-jet first track IP",
     "track IP","number of tracks",
-      400, -0.2, 0.2);
+      400, -0.5, 0.5);
     
     plots->hBJetIP_second = result->AddHist1D(
     "hBJetIP_second", "b-jet second track IP",
     "track IP","number of tracks",
-      400, -0.2, 0.2);
+       400, -0.5, 0.5);
   
     plots->hBJetIP_third = result->AddHist1D(
     "hBJetIP_third", "b-jet third track IP",
     "track IP","number of tracks",
-     400, -0.2, 0.2);
-  
-  plots->hBJetIP->SetLineColor(kRed);
-  plots->hLightJetIP->SetLineColor(kBlue);
-  plots->hLightJetIP->SetLineColor(kGreen);
+     400, -0.5, 0.5);
+     
+     
+     
+    plots->h_IPversusTrackPt = result->AddHist2D(
+    "h_IPversusTrackPt", "track IP versus p_{T}",
+    "track IP","p_{T}",
+     100, -0.3, 0.3, 100, 0.,100.);
+     
+  plots->hBJetIP_LeadingTrack->SetLineColor(kRed);
+  plots->hCJetIP_LeadingTrack->SetLineColor(kBlue);
+  plots->hLightJetIP_LeadingTrack->SetLineColor(kGreen);
   
   // book 1 stack of 2 histograms
   
-  stack = result->AddHistStack("IP all tracks b, c, light", "IP for b, c and light");
-  stack->Add(plots->hBJetIP);
-  stack->Add(plots->hLightJetIP);
-  stack->Add(plots->hCJetIP);
+  stack = result->AddHistStack("Leading track IP for b, c, light", "Leading track IP for b, c and light");
+  stack->Add(plots->hBJetIP_LeadingTrack);
+  stack->Add(plots->hLightJetIP_LeadingTrack);
+  stack->Add(plots->hCJetIP_LeadingTrack);
   
   plots->hBJetIP_first->SetLineColor(kRed);
   plots->hBJetIP_second->SetLineColor(kBlue);
@@ -264,7 +272,7 @@ plots->h_bJetTrackPt = result->AddHist1D(
   stack2->Add(plots->hBJetIP_second);
   stack2->Add(plots->hBJetIP_third);
   
-  stack3 = result->AddHistStack("Leading track IP", "Leading track IP for b, c and light ");
+  stack3 = result->AddHistStack("Highest IP", "Highest track IP for b, c and light ");
   stack3->Add(plots->hBJetIP_first);
   stack3->Add(plots->hCJetIP_first);
   stack3->Add(plots->hLightJetIP_first);
@@ -279,9 +287,9 @@ plots->h_bJetTrackPt = result->AddHist1D(
   // book legend for stack of 2 histograms
   
   legend = result->AddLegend(0.72, 0.86, 0.98, 0.98);
-  legend->AddEntry(plots->hBJetIP, "b", "l");
-  legend->AddEntry(plots->hCJetIP, "c ", "l");
-  legend->AddEntry(plots->hLightJetIP, "light ", "l");
+  legend->AddEntry(plots->hBJetIP_LeadingTrack, "b", "l");
+  legend->AddEntry(plots->hCJetIP_LeadingTrack, "c ", "l");
+  legend->AddEntry(plots->hLightJetIP_LeadingTrack, "light ", "l");
   
   
   // attach legend to stack (legend will be printed over stack in .eps file)
@@ -328,7 +336,7 @@ void AnalyseEvents(ExRootTreeReader *treeReader, MyPlots *plots)
   
   Int_t i, j, k, pdgCode, pdgCodeMax, trackpT, trackpTMax; 
   
-  Double_t dxy; //Impact Parameter
+  Double_t LeadingTrackDxy; //Impact Parameter
   
   Long64_t allEntries = treeReader->GetEntries();
   Long64_t entry;  
@@ -425,10 +433,12 @@ void AnalyseEvents(ExRootTreeReader *treeReader, MyPlots *plots)
 	// Get highest pT track in jet cone
 	if(dR > dRmin)continue;
 	
-	Double_t dxyAllTracks = ComputeIP(track);
-	IP.push_back(dxyAllTracks);
+	Double_t dxy = ComputeIP(track);
+	plots->h_IPversusTrackPt->Fill(dxy, track->PT);
+	IP.push_back(TMath::Abs(dxy));
 	
 	NrTracks +=1;
+	
 	trackpT = track->PT;
 	plots->hJetTrackDeltaR->Fill(dR);
 	
@@ -447,12 +457,12 @@ void AnalyseEvents(ExRootTreeReader *treeReader, MyPlots *plots)
       
       
       // calculate Impact parameter
-      dxy = ComputeIP(LeadingTrack);
+      LeadingTrackDxy = ComputeIP(LeadingTrack);
       
       // If b jet
       if(pdgCodeMax == 5)
       {	  
-	plots->hBJetIP->Fill(dxy);  
+	plots->hBJetIP_LeadingTrack->Fill(LeadingTrackDxy);  
 	plots->h_bJetLeadingTrackPt->Fill(LeadingTrack->PT);
 	plots->h_bJetTrackMultiplicity->Fill(NrTracks);
 	
@@ -467,7 +477,7 @@ void AnalyseEvents(ExRootTreeReader *treeReader, MyPlots *plots)
       // If c jet
       else if(pdgCodeMax == 4)
       {	  
-	plots->hCJetIP->Fill(dxy);
+	plots->hCJetIP_LeadingTrack->Fill(LeadingTrackDxy);
 	
 	if(IP.size()>0)plots->hCJetIP_first->Fill(IP[0]);  
       if(IP.size()>1)plots->hCJetIP_second->Fill(IP[1]);  
@@ -480,7 +490,7 @@ void AnalyseEvents(ExRootTreeReader *treeReader, MyPlots *plots)
       // If light jet
       else if( (pdgCodeMax > 0) && (pdgCodeMax <=3 || pdgCodeMax ==21) )
       {	  
-	plots->hLightJetIP->Fill(dxy);
+	plots->hLightJetIP_LeadingTrack->Fill(LeadingTrackDxy);
 	
 	if(IP.size()>0)plots->hLightJetIP_first->Fill(IP[0]);  
     if(IP.size()>1)plots->hLightJetIP_second->Fill(IP[1]);  
@@ -492,18 +502,19 @@ void AnalyseEvents(ExRootTreeReader *treeReader, MyPlots *plots)
       
     }	  
   }
-  plots->hBJetIP->Scale(1./plots->hBJetIP->Integral());
-  plots->hCJetIP->Scale(1./plots->hCJetIP->Integral());
-  plots->hLightJetIP->Scale(1./plots->hLightJetIP->Integral());
+  // plots->hBJetIP_LeadingTrack->Scale(1./plots->hBJetIP_LeadingTrack->Integral());
+//   plots->hCJetIP_LeadingTrack->Scale(1./plots->hCJetIP_LeadingTrack->Integral());
+//   plots->hLightJetIP_LeadingTrack->Scale(1./plots->hLightJetIP_LeadingTrack->Integral());
   
-  plots->hLightJetIP_first->Scale(1./plots->hLightJetIP_first->Integral());
-  plots->hCJetIP_first->Scale(1./plots->hCJetIP_first->Integral());
-  plots->hBJetIP_first->Scale(1./plots->hBJetIP_first->Integral());
+ //  plots->hLightJetIP_first->Scale(1./plots->hLightJetIP_first->Integral());
+//   plots->hCJetIP_first->Scale(1./plots->hCJetIP_first->Integral());
+//   plots->hBJetIP_first->Scale(1./plots->hBJetIP_first->Integral());
   
-	std::cout <<plots->hLightJetIP->ClassName()<<std::endl;
   Double_t median = GetMedian(plots->h_bJetTrackPt);
-  
   std::cout<<"Median b-jetTrackPt"<<median<<std::endl;
+  
+  median = GetMedian(plots->hBJetPt);
+  std::cout<<"Median hBJetPt"<<median<<std::endl;
   
   
   
@@ -527,7 +538,22 @@ void Analysis (const char *inputFile, const char *outputFile)
   
   TChain *chain = new TChain("Delphes");
   chain->Add(inputFile);
-  
+  chain->Add( "dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/trivcat/store/user/yangyong//data/Delphes/JetStudies_Phase_II_140PileUp_conf4/HH_bbWW/HH_bbWW_44_4to8k.root");
+  chain->Add( "dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/trivcat/store/user/yangyong//data/Delphes/JetStudies_Phase_II_140PileUp_conf4/HH_bbWW/HH_bbWW_10_0to4k.root");
+chain->Add( "dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/trivcat/store/user/yangyong//data/Delphes/JetStudies_Phase_II_140PileUp_conf4/HH_bbWW/HH_bbWW_10_12to16k.root");
+chain->Add( "dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/trivcat/store/user/yangyong//data/Delphes/JetStudies_Phase_II_140PileUp_conf4/HH_bbWW/HH_bbWW_10_16to20k.root");
+// chain->Add( "dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/trivcat/store/user/yangyong//data/Delphes/JetStudies_Phase_II_140PileUp_conf4/HH_bbWW/HH_bbWW_10_4to8k.root");
+// chain->Add( "dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/trivcat/store/user/yangyong//data/Delphes/JetStudies_Phase_II_140PileUp_conf4/HH_bbWW/HH_bbWW_10_8to12k.root");
+// chain->Add( "dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/trivcat/store/user/yangyong//data/Delphes/JetStudies_Phase_II_140PileUp_conf4/HH_bbWW/HH_bbWW_11_0to4k.root");
+// chain->Add( "dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/trivcat/store/user/yangyong//data/Delphes/JetStudies_Phase_II_140PileUp_conf4/HH_bbWW/HH_bbWW_11_12to16k.root");
+// chain->Add( "dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/trivcat/store/user/yangyong//data/Delphes/JetStudies_Phase_II_140PileUp_conf4/HH_bbWW/HH_bbWW_11_16to20k.root");
+// chain->Add( "dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/trivcat/store/user/yangyong//data/Delphes/JetStudies_Phase_II_140PileUp_conf4/HH_bbWW/HH_bbWW_11_4to8k.root");
+// chain->Add( "dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/trivcat/store/user/yangyong//data/Delphes/JetStudies_Phase_II_140PileUp_conf4/HH_bbWW/HH_bbWW_11_8to12k.root");
+// chain->Add( "dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/trivcat/store/user/yangyong//data/Delphes/JetStudies_Phase_II_140PileUp_conf4/HH_bbWW/HH_bbWW_12_0to4k.root");
+// chain->Add( "dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/trivcat/store/user/yangyong//data/Delphes/JetStudies_Phase_II_140PileUp_conf4/HH_bbWW/HH_bbWW_12_12to16k.root");
+// chain->Add( "dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/trivcat/store/user/yangyong//data/Delphes/JetStudies_Phase_II_140PileUp_conf4/HH_bbWW/HH_bbWW_12_16to20k.root");
+// chain->Add( "dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/trivcat/store/user/yangyong//data/Delphes/JetStudies_Phase_II_140PileUp_conf4/HH_bbWW/HH_bbWW_12_4to8k.root");
+
   ExRootTreeReader *treeReader = new ExRootTreeReader(chain);
   ExRootResult *result = new ExRootResult();
   
@@ -537,7 +563,7 @@ void Analysis (const char *inputFile, const char *outputFile)
   
   AnalyseEvents(treeReader, plots);
   
-  //  PrintHistograms(result, plots);
+ // PrintHistograms(result, plots);
   
   result->Write(outputFile);
   
